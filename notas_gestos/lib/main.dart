@@ -35,19 +35,55 @@ class _NotasGestosState extends State<NotasGestos> {
   Nota? _notaBorrada;
   int? _posicionBorrada;
 
+  bool _agitarActivo = true;
+  bool _hayAcelerometro = true;
   StreamSubscription<UserAccelerometerEvent>? _suscripcion;
 
   @override
   void initState() {
     super.initState();
+    _activarSensor();
+  }
+
+  void _activarSensor() {
     // userAccelerometer mide la aceleración SIN la gravedad.
-    _suscripcion = userAccelerometerEventStream(
-      samplingPeriod: SensorInterval.gameInterval,
-    ).listen((evento) {
-      if (_detector.procesar(evento.x, evento.y, evento.z, DateTime.now())) {
-        _recuperar(alAgitar: true);
-      }
+    try {
+      _suscripcion = userAccelerometerEventStream(
+        samplingPeriod: SensorInterval.gameInterval,
+      ).listen(
+        (evento) {
+          if (_detector.procesar(evento.x, evento.y, evento.z, DateTime.now())) {
+            _recuperar(alAgitar: true);
+          }
+        },
+        onError: (_) => _sinSensor(), // por ejemplo, en escritorio
+        cancelOnError: true,
+      );
+    } catch (_) {
+      // Algunas plataformas fallan al crear el flujo en vez de dar error en él.
+      WidgetsBinding.instance.addPostFrameCallback((_) => _sinSensor());
+    }
+  }
+
+  void _desactivarSensor() {
+    _suscripcion?.cancel();
+    _suscripcion = null;
+  }
+
+  void _sinSensor() {
+    _desactivarSensor();
+    if (!mounted) return;
+    setState(() {
+      _agitarActivo = false;
+      _hayAcelerometro = false;
     });
+    _mostrarMensaje('Este dispositivo no tiene acelerómetro');
+  }
+
+  void _cambiarAgitar(bool activo) {
+    setState(() => _agitarActivo = activo);
+    // Desactivado, la app deja de escuchar el sensor.
+    activo ? _activarSensor() : _desactivarSensor();
   }
 
   void _anadir() {
@@ -82,20 +118,53 @@ class _NotasGestosState extends State<NotasGestos> {
       _notaBorrada = null;
       _posicionBorrada = null;
     });
-    if (alAgitar) {
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Nota recuperada al agitar')),
-      );
-    }
+    if (alAgitar) _mostrarMensaje('Nota recuperada al agitar');
+  }
+
+  void _mostrarMensaje(String texto) {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(texto)));
+  }
+
+  @override
+  void dispose() {
+    _desactivarSensor(); // cancelo la suscripción al sensor
+    _controlador.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Notas')),
+      appBar: AppBar(
+        title: const Text('Notas'),
+        actions: [
+          // Feedback: indica si el gesto está activo.
+          Tooltip(
+            message: _agitarActivo
+                ? 'Agitar para deshacer: activado'
+                : 'Agitar para deshacer: desactivado',
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Icon(
+                _agitarActivo ? Icons.vibration : Icons.mobile_off,
+                color: _agitarActivo ? Colors.green : Colors.grey,
+              ),
+            ),
+          ),
+        ],
+      ),
       body: Column(
         children: [
+          SwitchListTile(
+            title: const Text('Agitar para deshacer'),
+            subtitle: Text(_hayAcelerometro
+                ? 'Agita el móvil para recuperar la última nota borrada'
+                : 'Este dispositivo no tiene acelerómetro'),
+            value: _agitarActivo,
+            // Sin acelerómetro el interruptor queda deshabilitado.
+            onChanged: _hayAcelerometro ? _cambiarAgitar : null,
+          ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Row(
