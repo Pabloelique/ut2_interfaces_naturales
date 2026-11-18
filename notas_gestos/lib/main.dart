@@ -1,121 +1,147 @@
+// Actividad 2 · Agitar para deshacer.
+// Al agitar el móvil se recupera la última nota borrada. El gesto es opcional
+// y siempre tiene alternativa táctil (botón «Deshacer» del SnackBar).
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:sensors_plus/sensors_plus.dart';
 
-void main() {
-  runApp(const MyApp());
+import 'detector_agitado.dart';
+
+void main() => runApp(const MaterialApp(home: NotasGestos()));
+
+// Cada nota lleva un id para que la key del Dismissible sea única
+// aunque haya dos notas con el mismo texto.
+class Nota {
+  Nota(this.id, this.texto);
+  final int id;
+  final String texto;
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  // This widget is the root of your application.
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
-    );
-  }
-}
-
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class NotasGestos extends StatefulWidget {
+  const NotasGestos({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<NotasGestos> createState() => _NotasGestosState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _NotasGestosState extends State<NotasGestos> {
+  final List<Nota> _notas = [];
+  final _controlador = TextEditingController();
+  final _detector = DetectorAgitado();
+  int _siguienteId = 0;
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+  // Última nota borrada y su posición, para poder deshacer.
+  Nota? _notaBorrada;
+  int? _posicionBorrada;
+
+  StreamSubscription<UserAccelerometerEvent>? _suscripcion;
+
+  @override
+  void initState() {
+    super.initState();
+    // userAccelerometer mide la aceleración SIN la gravedad.
+    _suscripcion = userAccelerometerEventStream(
+      samplingPeriod: SensorInterval.gameInterval,
+    ).listen((evento) {
+      if (_detector.procesar(evento.x, evento.y, evento.z, DateTime.now())) {
+        _recuperar(alAgitar: true);
+      }
     });
   }
 
+  void _anadir() {
+    final texto = _controlador.text.trim();
+    if (texto.isEmpty) return;
+    setState(() => _notas.add(Nota(_siguienteId++, texto)));
+    _controlador.clear();
+  }
+
+  void _borrar(int index) {
+    setState(() {
+      _notaBorrada = _notas.removeAt(index);
+      _posicionBorrada = index;
+    });
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Nota borrada'),
+        action: SnackBarAction(label: 'Deshacer', onPressed: _recuperar),
+      ),
+    );
+  }
+
+  void _recuperar({bool alAgitar = false}) {
+    final nota = _notaBorrada;
+    if (nota == null) return; // nada que deshacer: la sacudida no hace nada
+    setState(() {
+      // Por si la lista ha cambiado, no me paso del final.
+      final guardada = _posicionBorrada!;
+      final posicion = guardada <= _notas.length ? guardada : _notas.length;
+      _notas.insert(posicion, nota);
+      _notaBorrada = null;
+      _posicionBorrada = null;
+    });
+    if (alAgitar) {
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nota recuperada al agitar')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: .center,
-          children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+      appBar: AppBar(title: const Text('Notas')),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _controlador,
+                    decoration: const InputDecoration(labelText: 'Nueva nota'),
+                    onSubmitted: (_) => _anadir(),
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Añadir nota',
+                  icon: const Icon(Icons.add),
+                  onPressed: _anadir,
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
+          ),
+          Expanded(
+            child: ListView.builder(
+              itemCount: _notas.length,
+              itemBuilder: (context, index) {
+                final nota = _notas[index];
+                return Dismissible(
+                  key: ValueKey(nota.id), // la key sale del dato, no del índice
+                  background: Container(
+                    color: Colors.red,
+                    alignment: Alignment.centerLeft,
+                    padding: const EdgeInsets.only(left: 16),
+                    child: const Icon(Icons.delete, color: Colors.white),
+                  ),
+                  onDismissed: (_) => _borrar(index),
+                  child: ListTile(
+                    title: Text(nota.texto),
+                    trailing: IconButton(
+                      tooltip: 'Borrar nota',
+                      icon: const Icon(Icons.delete_outline),
+                      onPressed: () => _borrar(index),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
