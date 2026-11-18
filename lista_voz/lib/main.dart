@@ -8,7 +8,14 @@ import 'package:speech_to_text/speech_to_text.dart';
 
 import 'comandos.dart';
 
-void main() => runApp(const MaterialApp(home: ListaVoz()));
+// Color de la app: verde oliva. Como en el ejemplo 13, con la semilla
+// Flutter saca todos los colores (botones, interruptores, etc.).
+const colorApp = Color(0xFF6B8E23);
+
+void main() => runApp(MaterialApp(
+      theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: colorApp)),
+      home: const ListaVoz(),
+    ));
 
 class ListaVoz extends StatefulWidget {
   const ListaVoz({super.key});
@@ -171,6 +178,7 @@ class _ListaVozState extends State<ListaVoz> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
         title: const Text('Lista por voz'),
         actions: [
           IconButton(
