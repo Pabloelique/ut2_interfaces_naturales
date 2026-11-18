@@ -1,17 +1,33 @@
-# notas_gestos
+# Actividad 2 · Agitar para deshacer
 
-A new Flutter project.
+App de notas: al borrar una nota sale «Nota borrada» con «Deshacer», y agitar el móvil también la recupera en su posición. El gesto se puede desactivar.
 
-## Getting Started
+## Ficheros
+- `lib/detector_agitado.dart`: clase `DetectorAgitado` (Dart puro).
+- `lib/main.dart`: lista de notas, `Dismissible`, SnackBar y sensor (`sensors_plus`).
+- `test/detector_agitado_test.dart`: 5 pruebas (reposo, sacudida, dentro de la pausa, pasada la pausa y otro umbral).
 
-This project is a starting point for a Flutter application.
+## Cómo probarlo
+```bash
+flutter test test/detector_agitado_test.dart
+flutter run
+```
+En el emulador: *Extended controls › Virtual sensors* y mover el dispositivo virtual.
 
-A few resources to get you started if this is your first Flutter project:
+## Reflexión
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+### 1. Umbral elegido
+| Umbral | Resultado caminando con el móvil en la mano |
+|--------|---------------------------------------------|
+| 10 m/s² | <!-- RELLENAR --> |
+| 15 m/s² | <!-- RELLENAR --> |
+| 25 m/s² | <!-- RELLENAR --> |
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+**Elijo:** <!-- RELLENAR: el umbral y por qué (un umbral bajo salta al caminar; uno alto obliga a agitar muy fuerte) -->
+
+### 2. ¿Por qué `userAccelerometerEventStream` y no `accelerometerEventStream`?
+`accelerometerEventStream` incluye la gravedad, así que con el móvil quieto encima de la mesa ya marca unos 9,8 m/s² (en el eje z). `userAccelerometerEventStream` resta la gravedad y en reposo da valores cercanos a 0, así que solo mide el movimiento que hace el usuario. Con el acelerómetro normal, el reposo ya estaría cerca del umbral y con un movimiento pequeño saltaría la sacudida sin querer.
+
+### 3. Condiciones de WCAG 2.5.4 (Activación mediante movimiento) que cumple la app
+1. **La función también se puede hacer con un componente de la interfaz:** deshacer está en el botón «Deshacer» del SnackBar, sin necesidad de agitar.
+2. **La respuesta al movimiento se puede desactivar** para evitar activaciones accidentales: el interruptor «Agitar para deshacer» deja de escuchar el sensor.
