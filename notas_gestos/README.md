@@ -31,3 +31,10 @@ En el emulador: *Extended controls › Virtual sensors* y mover el dispositivo v
 ### 3. Condiciones de WCAG 2.5.4 (Activación mediante movimiento) que cumple la app
 1. **La función también se puede hacer con un componente de la interfaz:** deshacer está en el botón «Deshacer» del SnackBar, sin necesidad de agitar.
 2. **La respuesta al movimiento se puede desactivar** para evitar activaciones accidentales: el interruptor «Agitar para deshacer» deja de escuchar el sensor.
+
+## Capturas (emulador Android)
+La sacudida se simuló con los sensores virtuales del emulador.
+
+| Nota borrada (con Deshacer) | Nota recuperada al agitar |
+|---|---|
+| ![Borrada](capturas/nota_borrada.png) | ![Recuperada](capturas/recuperada_al_agitar.png) |
