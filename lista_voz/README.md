@@ -29,3 +29,8 @@ Según el resultado:
 ### 2. Situaciones en las que no se puede usar la voz
 1. **Lugar con ruido o donde hay que estar en silencio** (clase, biblioteca, transporte público). La app tiene los botones Añadir, Borrar y Leer, que hacen lo mismo que la voz.
 2. **Usuario con problemas de habla o sin permiso de micrófono / sin servicio de voz.** El micrófono sale deshabilitado (gris), con un texto que explica el motivo, y la app sigue funcionando con los botones.
+
+## Capturas (emulador Android)
+| Botones Añadir/Borrar | Micrófono escuchando |
+|---|---|
+| ![Botones](capturas/botones.png) | ![Escuchando](capturas/escuchando.png) |
