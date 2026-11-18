@@ -8,7 +8,14 @@ import 'package:sensors_plus/sensors_plus.dart';
 
 import 'detector_agitado.dart';
 
-void main() => runApp(const MaterialApp(home: NotasGestos()));
+// Color de la app: verde oliva. Como en el ejemplo 13, con la semilla
+// Flutter saca todos los colores (botones, interruptores, etc.).
+const colorApp = Color(0xFF6B8E23);
+
+void main() => runApp(MaterialApp(
+      theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: colorApp)),
+      home: const NotasGestos(),
+    ));
 
 // Cada nota lleva un id para que la key del Dismissible sea única
 // aunque haya dos notas con el mismo texto.
@@ -137,6 +144,7 @@ class _NotasGestosState extends State<NotasGestos> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
         title: const Text('Notas'),
         actions: [
           // Feedback: indica si el gesto está activo.
