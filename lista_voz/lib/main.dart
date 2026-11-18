@@ -212,6 +212,24 @@ class _ListaVozState extends State<ListaVoz> {
               ),
             ),
           ),
+          // Ampliación: desplegable con los idiomas del reconocimiento.
+          if (_idiomas.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: DropdownMenu<String>(
+                label: const Text('Idioma'),
+                expandedInsets: EdgeInsets.zero, // ocupa todo el ancho
+                initialSelection: _idiomaElegido,
+                dropdownMenuEntries: [
+                  for (final idioma in _idiomas)
+                    DropdownMenuEntry(
+                        value: idioma.localeId, label: idioma.name),
+                ],
+                onSelected: (valor) {
+                  if (valor != null) setState(() => _idiomaElegido = valor);
+                },
+              ),
+            ),
           Expanded(
             child: _elementos.isEmpty
                 ? const Center(child: Text('La lista está vacía'))
