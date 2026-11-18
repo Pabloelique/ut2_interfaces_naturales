@@ -28,6 +28,10 @@ class _ListaVozState extends State<ListaVoz> {
   String _ultimaOrden = '-';
   String _motivoSinVoz = 'Comprobando el micrófono...';
 
+  // Ampliación: idiomas que ofrece el reconocimiento del móvil.
+  List<LocaleName> _idiomas = [];
+  String _idiomaElegido = 'es_ES';
+
   @override
   void initState() {
     super.initState();
@@ -61,10 +65,25 @@ class _ListaVozState extends State<ListaVoz> {
           : 'No hay permiso para usar el micrófono. Usa los botones o dale permiso en Ajustes.';
     }
 
+    // Pido la lista de idiomas (solo se puede después de initialize).
+    List<LocaleName> idiomas = [];
+    if (disponible) {
+      idiomas = await _voz.locales();
+    }
+
     if (!mounted) return;
     setState(() {
       _vozDisponible = disponible;
       _motivoSinVoz = motivo;
+      _idiomas = idiomas;
+      // Cada móvil escribe el id a su manera (es_ES o es-ES), así que
+      // busco el primero que sea español para dejarlo elegido.
+      for (final idioma in idiomas) {
+        if (idioma.localeId.startsWith('es')) {
+          _idiomaElegido = idioma.localeId;
+          break;
+        }
+      }
     });
   }
 
