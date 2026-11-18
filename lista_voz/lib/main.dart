@@ -162,6 +162,8 @@ class _ListaVozState extends State<ListaVoz> {
         ],
       ),
       body: Column(
+        // stretch: la tarjeta ocupa todo el ancho
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Feedback: lo que se está oyendo y la última orden reconocida.
           Card(
@@ -204,7 +206,7 @@ class _ListaVozState extends State<ListaVoz> {
           ),
           // Alternativa táctil: los mismos comandos con botones.
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 90),
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 110),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
