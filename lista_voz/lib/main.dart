@@ -114,7 +114,7 @@ class _ListaVozState extends State<ListaVoz> {
     });
     await _voz.listen(
       onResult: _alResultado,
-      localeId: 'es_ES',
+      localeId: _idiomaElegido, // el del desplegable (por defecto español)
       listenFor: const Duration(seconds: 5), // máximo 5 segundos
     );
   }
