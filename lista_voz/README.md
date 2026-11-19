@@ -13,6 +13,17 @@ flutter test test/comandos_test.dart
 flutter run
 ```
 
+## Ampliación: cambiar el idioma
+Debajo de la tarjeta hay un desplegable (`DropdownMenu`) con los idiomas que devuelve `locales()`, es decir, los que sabe reconocer el móvil. Sale elegido el español.
+
+Al elegir otro idioma:
+- El micro escucha en ese idioma, porque `listen()` usa `localeId: _idiomaElegido`.
+- La voz que contesta también cambia, con `_tts.setLanguage()`. `flutter_tts` quiere el idioma con guion (`it-IT`) y `speech_to_text` a veces lo da con barra baja (`it_IT`), así que cambio `_` por `-`.
+
+Lo probé en el emulador eligiendo «Italian (Italy)»: al pulsar el micro, en el log sale que el reconocedor arranca con `locale: it-IT`.
+
+Ojo: las órdenes se siguen entendiendo solo en español (`comandos.dart`) y las respuestas están escritas en español. Cambiar el idioma cambia la voz y el reconocimiento, no traduce la app.
+
 ## Reflexión
 
 ### 1. ¿El reconocimiento va en el dispositivo o en un servidor?
@@ -30,6 +41,6 @@ Lo que sí sé es cómo funciona: `speech_to_text` no reconoce la voz por sí mi
 2. **Si no hay permiso de micro o el móvil no tiene servicio de voz** (o el usuario tiene problemas para hablar). El micro sale en gris con un texto que explica por qué, y la app se sigue usando con los botones.
 
 ## Capturas (emulador Android)
-| Botones Añadir/Borrar | Micro escuchando |
-|---|---|
-| ![Botones](capturas/botones.png) | ![Escuchando](capturas/escuchando.png) |
+| Botones Añadir/Borrar | Micro escuchando | Idioma cambiado a italiano |
+|---|---|---|
+| ![Botones](capturas/botones.png) | ![Escuchando](capturas/escuchando.png) | ![Idioma](capturas/idioma.png) |
