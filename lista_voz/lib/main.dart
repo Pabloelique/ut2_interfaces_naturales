@@ -161,6 +161,13 @@ class _ListaVozState extends State<ListaVoz> {
     }
   }
 
+  // Ampliación: al elegir un idioma cambia el de escuchar y el de la voz.
+  Future<void> _cambiarIdioma(String idioma) async {
+    setState(() => _idiomaElegido = idioma);
+    // flutter_tts usa guion (es-ES) y speech_to_text a veces barra baja (es_ES).
+    await _tts.setLanguage(idioma.replaceAll('_', '-'));
+  }
+
   Future<void> _hablar(String texto) async {
     await _tts.stop(); // corta la frase anterior si aún estaba hablando
     await _tts.speak(texto);
@@ -234,7 +241,7 @@ class _ListaVozState extends State<ListaVoz> {
                         value: idioma.localeId, label: idioma.name),
                 ],
                 onSelected: (valor) {
-                  if (valor != null) setState(() => _idiomaElegido = valor);
+                  if (valor != null) _cambiarIdioma(valor);
                 },
               ),
             ),
