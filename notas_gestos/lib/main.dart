@@ -12,10 +12,12 @@ import 'detector_agitado.dart';
 // Flutter saca todos los colores (botones, interruptores, etc.).
 const colorApp = Color(0xFF6B8E23);
 
-void main() => runApp(MaterialApp(
-      theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: colorApp)),
-      home: const NotasGestos(),
-    ));
+void main() => runApp(
+  MaterialApp(
+    theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: colorApp)),
+    home: const NotasGestos(),
+  ),
+);
 
 // Cada nota lleva un id para que la key del Dismissible sea única
 // aunque haya dos notas con el mismo texto.
@@ -46,6 +48,9 @@ class _NotasGestosState extends State<NotasGestos> {
   bool _hayAcelerometro = true;
   StreamSubscription<UserAccelerometerEvent>? _suscripcion;
 
+  // Ampliación: pestaña elegida en la NavigationBar (0 = Notas, 1 = Papelera).
+  int _pestana = 0;
+
   @override
   void initState() {
     super.initState();
@@ -55,17 +60,23 @@ class _NotasGestosState extends State<NotasGestos> {
   void _activarSensor() {
     // userAccelerometer mide la aceleración SIN la gravedad.
     try {
-      _suscripcion = userAccelerometerEventStream(
-        samplingPeriod: SensorInterval.gameInterval,
-      ).listen(
-        (evento) {
-          if (_detector.procesar(evento.x, evento.y, evento.z, DateTime.now())) {
-            _recuperar(alAgitar: true);
-          }
-        },
-        onError: (_) => _sinSensor(), // por ejemplo, en escritorio
-        cancelOnError: true,
-      );
+      _suscripcion =
+          userAccelerometerEventStream(
+            samplingPeriod: SensorInterval.gameInterval,
+          ).listen(
+            (evento) {
+              if (_detector.procesar(
+                evento.x,
+                evento.y,
+                evento.z,
+                DateTime.now(),
+              )) {
+                _recuperar(alAgitar: true);
+              }
+            },
+            onError: (_) => _sinSensor(), // por ejemplo, en escritorio
+            cancelOnError: true,
+          );
     } catch (_) {
       // Algunas plataformas fallan al crear el flujo en vez de dar error en él.
       WidgetsBinding.instance.addPostFrameCallback((_) => _sinSensor());
@@ -162,64 +173,85 @@ class _NotasGestosState extends State<NotasGestos> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          SwitchListTile(
-            title: const Text('Agitar para deshacer'),
-            subtitle: Text(_hayAcelerometro
-                ? 'Agita el móvil para recuperar la última nota borrada'
-                : 'Este dispositivo no tiene acelerómetro'),
-            value: _agitarActivo,
-            // Sin acelerómetro el interruptor queda deshabilitado.
-            onChanged: _hayAcelerometro ? _cambiarAgitar : null,
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Row(
+      body: _pestana == 1
+          ? _pantallaPapelera()
+          : Column(
               children: [
-                Expanded(
-                  child: TextField(
-                    controller: _controlador,
-                    decoration: const InputDecoration(labelText: 'Nueva nota'),
-                    onSubmitted: (_) => _anadir(),
+                SwitchListTile(
+                  title: const Text('Agitar para deshacer'),
+                  subtitle: Text(
+                    _hayAcelerometro
+                        ? 'Agita el móvil para recuperar la última nota borrada'
+                        : 'Este dispositivo no tiene acelerómetro',
+                  ),
+                  value: _agitarActivo,
+                  // Sin acelerómetro el interruptor queda deshabilitado.
+                  onChanged: _hayAcelerometro ? _cambiarAgitar : null,
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _controlador,
+                          decoration: const InputDecoration(
+                            labelText: 'Nueva nota',
+                          ),
+                          onSubmitted: (_) => _anadir(),
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: 'Añadir nota',
+                        icon: const Icon(Icons.add),
+                        onPressed: _anadir,
+                      ),
+                    ],
                   ),
                 ),
-                IconButton(
-                  tooltip: 'Añadir nota',
-                  icon: const Icon(Icons.add),
-                  onPressed: _anadir,
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: _notas.length,
+                    itemBuilder: (context, index) {
+                      final nota = _notas[index];
+                      return Dismissible(
+                        key: ValueKey(
+                          nota.id,
+                        ), // la key sale del dato, no del índice
+                        background: Container(
+                          color: Colors.red,
+                          alignment: Alignment.centerLeft,
+                          padding: const EdgeInsets.only(left: 16),
+                          child: const Icon(Icons.delete, color: Colors.white),
+                        ),
+                        onDismissed: (_) => _borrar(index),
+                        child: ListTile(
+                          title: Text(nota.texto),
+                          trailing: IconButton(
+                            tooltip: 'Borrar nota',
+                            icon: const Icon(Icons.delete_outline),
+                            onPressed: () => _borrar(index),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ],
             ),
-          ),
-          Expanded(
-            child: ListView.builder(
-              itemCount: _notas.length,
-              itemBuilder: (context, index) {
-                final nota = _notas[index];
-                return Dismissible(
-                  key: ValueKey(nota.id), // la key sale del dato, no del índice
-                  background: Container(
-                    color: Colors.red,
-                    alignment: Alignment.centerLeft,
-                    padding: const EdgeInsets.only(left: 16),
-                    child: const Icon(Icons.delete, color: Colors.white),
-                  ),
-                  onDismissed: (_) => _borrar(index),
-                  child: ListTile(
-                    title: Text(nota.texto),
-                    trailing: IconButton(
-                      tooltip: 'Borrar nota',
-                      icon: const Icon(Icons.delete_outline),
-                      onPressed: () => _borrar(index),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _pestana,
+        onDestinationSelected: (indice) => setState(() => _pestana = indice),
+        destinations: const [
+          NavigationDestination(icon: Icon(Icons.note), label: 'Notas'),
+          NavigationDestination(icon: Icon(Icons.delete), label: 'Papelera'),
         ],
       ),
     );
+  }
+
+  // Pestaña Papelera.
+  Widget _pantallaPapelera() {
+    return const Center(child: Text('La papelera está vacía'));
   }
 }
