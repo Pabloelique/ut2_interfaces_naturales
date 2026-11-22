@@ -50,6 +50,8 @@ class _NotasGestosState extends State<NotasGestos> {
 
   // Ampliación: pestaña elegida en la NavigationBar (0 = Notas, 1 = Papelera).
   int _pestana = 0;
+  // Notas borradas, que se ven en la pestaña Papelera.
+  final List<Nota> _papelera = [];
 
   @override
   void initState() {
@@ -114,6 +116,7 @@ class _NotasGestosState extends State<NotasGestos> {
   void _borrar(int index) {
     setState(() {
       _notaBorrada = _notas.removeAt(index);
+      _papelera.add(_notaBorrada!); // va a la papelera
       _posicionBorrada = index;
     });
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -133,6 +136,7 @@ class _NotasGestosState extends State<NotasGestos> {
       final guardada = _posicionBorrada!;
       final posicion = guardada <= _notas.length ? guardada : _notas.length;
       _notas.insert(posicion, nota);
+      _papelera.remove(nota); // si se recupera, sale de la papelera
       _notaBorrada = null;
       _posicionBorrada = null;
     });
@@ -252,6 +256,15 @@ class _NotasGestosState extends State<NotasGestos> {
 
   // Pestaña Papelera.
   Widget _pantallaPapelera() {
-    return const Center(child: Text('La papelera está vacía'));
+    if (_papelera.isEmpty) {
+      return const Center(child: Text('La papelera está vacía'));
+    }
+    return ListView.builder(
+      itemCount: _papelera.length,
+      itemBuilder: (context, index) => ListTile(
+        leading: const Icon(Icons.delete_outline),
+        title: Text(_papelera[index].texto),
+      ),
+    );
   }
 }
