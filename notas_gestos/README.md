@@ -6,13 +6,25 @@ App de notas. Cuando borras una nota sale «Nota borrada» con el botón «Desha
 - `lib/detector_agitado.dart`: la clase `DetectorAgitado` (Dart puro).
 - `lib/main.dart`: la lista de notas, el `Dismissible`, los SnackBar y el sensor (`sensors_plus`).
 - `test/detector_agitado_test.dart`: 5 tests (reposo, sacudida, otra sacudida dentro de la pausa, otra pasada la pausa y un umbral distinto).
+- `lib/detector_inclinacion.dart`: la clase `DetectorInclinacion` de la ampliación (Dart puro).
+- `test/detector_inclinacion_test.dart`: 6 tests (recto, izquierda, derecha, mantenerlo inclinado cuenta una vez, vuelve al centro y detecta otra vez, umbral distinto).
 
 ## Cómo probarlo
 ```bash
-flutter test test/detector_agitado_test.dart
+flutter test
 flutter run
 ```
 En el emulador: *Extended controls › Virtual sensors* y mover el móvil virtual.
+
+## Ampliación: pestañas y cambiar de pestaña al inclinar
+- Abajo hay una `NavigationBar` con dos pestañas: **Notas** y **Papelera**. Las notas que borras van a la Papelera, y si las recuperas (con Deshacer o agitando) salen de ella.
+- Si inclinas el móvil a la **izquierda** va a Notas, y a la **derecha** va a Papelera. Uso `accelerometerEventStream`, que aquí sí tiene que incluir la gravedad: con el móvil de pie, al inclinarlo a un lado la gravedad cae sobre el eje x (positivo a la izquierda y negativo a la derecha).
+- La lógica está en `DetectorInclinacion` (Dart puro, con tests). Cuenta como inclinado si x pasa de 5 m/s² (unos 30°). Después espera a que el móvil vuelva al centro, para que dejarlo inclinado no cambie de pestaña todo el rato.
+- Como también es una acción con movimiento, tiene su propio interruptor «Inclinar para cambiar de pestaña» (WCAG 2.5.4), y las pestañas se pueden cambiar siempre tocando la barra de abajo.
+
+Lo probé en el emulador cambiando la aceleración en los sensores virtuales: con x = -7 pasa a Papelera, con x = 7 vuelve a Notas y con el interruptor apagado no cambia.
+
+Una cosa que hay que tener en cuenta: al agitar fuerte también se mueve el eje x, así que una sacudida puede cambiar de pestaña. Si molesta, se puede apagar uno de los dos interruptores.
 
 ## Reflexión
 
@@ -37,3 +49,7 @@ La sacudida la simulé con los sensores virtuales del emulador.
 | Nota borrada (con Deshacer) | Nota recuperada al agitar |
 |---|---|
 | ![Borrada](capturas/nota_borrada.png) | ![Recuperada](capturas/recuperada_al_agitar.png) |
+
+| Inclinar a la derecha: Papelera | Interruptor de inclinar apagado |
+|---|---|
+| ![Papelera](capturas/inclinar_derecha_papelera.png) | ![Desactivado](capturas/inclinar_desactivado.png) |
