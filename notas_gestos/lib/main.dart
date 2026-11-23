@@ -55,6 +55,7 @@ class _NotasGestosState extends State<NotasGestos> {
   final List<Nota> _papelera = [];
   // Inclinar el móvil para cambiar de pestaña.
   final _detectorInclinacion = DetectorInclinacion();
+  bool _inclinarActivo = true;
   StreamSubscription<AccelerometerEvent>? _suscripcionInclinacion;
 
   @override
@@ -132,6 +133,12 @@ class _NotasGestosState extends State<NotasGestos> {
       _hayAcelerometro = false;
     });
     _mostrarMensaje('Este dispositivo no tiene acelerómetro');
+  }
+
+  void _cambiarInclinar(bool activo) {
+    setState(() => _inclinarActivo = activo);
+    // Igual que agitar: desactivado, no se escucha el sensor (WCAG 2.5.4).
+    activo ? _activarInclinacion() : _desactivarInclinacion();
   }
 
   void _cambiarAgitar(bool activo) {
@@ -226,6 +233,14 @@ class _NotasGestosState extends State<NotasGestos> {
                   value: _agitarActivo,
                   // Sin acelerómetro el interruptor queda deshabilitado.
                   onChanged: _hayAcelerometro ? _cambiarAgitar : null,
+                ),
+                SwitchListTile(
+                  title: const Text('Inclinar para cambiar de pestaña'),
+                  subtitle: const Text(
+                    'Inclina a la izquierda para Notas y a la derecha para Papelera',
+                  ),
+                  value: _inclinarActivo && _hayAcelerometro,
+                  onChanged: _hayAcelerometro ? _cambiarInclinar : null,
                 ),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
