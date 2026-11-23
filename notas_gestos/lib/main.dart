@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 
 import 'detector_agitado.dart';
+import 'detector_inclinacion.dart';
 
 // Color de la app: verde oliva. Como en el ejemplo 13, con la semilla
 // Flutter saca todos los colores (botones, interruptores, etc.).
@@ -52,11 +53,44 @@ class _NotasGestosState extends State<NotasGestos> {
   int _pestana = 0;
   // Notas borradas, que se ven en la pestaña Papelera.
   final List<Nota> _papelera = [];
+  // Inclinar el móvil para cambiar de pestaña.
+  final _detectorInclinacion = DetectorInclinacion();
+  StreamSubscription<AccelerometerEvent>? _suscripcionInclinacion;
 
   @override
   void initState() {
     super.initState();
     _activarSensor();
+    _activarInclinacion();
+  }
+
+  void _activarInclinacion() {
+    // accelerometer SÍ incluye la gravedad: con el móvil de pie, al inclinarlo
+    // a un lado la gravedad «cae» sobre el eje x.
+    try {
+      _suscripcionInclinacion =
+          accelerometerEventStream(samplingPeriod: SensorInterval.uiInterval)
+              .listen(
+                (evento) {
+                  final inclinacion = _detectorInclinacion.procesar(evento.x);
+                  // Izquierda = pestaña de la izquierda (Notas), derecha = Papelera.
+                  if (inclinacion == Inclinacion.izquierda) {
+                    setState(() => _pestana = 0);
+                  } else if (inclinacion == Inclinacion.derecha) {
+                    setState(() => _pestana = 1);
+                  }
+                },
+                onError: (_) => _desactivarInclinacion(), // sin acelerómetro
+                cancelOnError: true,
+              );
+    } catch (_) {
+      _desactivarInclinacion();
+    }
+  }
+
+  void _desactivarInclinacion() {
+    _suscripcionInclinacion?.cancel();
+    _suscripcionInclinacion = null;
   }
 
   void _activarSensor() {
@@ -151,6 +185,7 @@ class _NotasGestosState extends State<NotasGestos> {
   @override
   void dispose() {
     _desactivarSensor(); // cancelo la suscripción al sensor
+    _desactivarInclinacion(); // y la de inclinar
     _controlador.dispose();
     super.dispose();
   }
